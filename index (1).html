@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZAP. Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --black: #0a0a08;
+    --off-white: #f4f1eb;
+    --warm-grey: #b8b4aa;
+    --accent: #c8f23a;
+    --accent-dark: #9cbf1a;
+    --mid: #2e2d28;
+    --card-bg: #131310;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--off-white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
+    mix-blend-mode: difference;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(200, 242, 58, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.12s ease, width 0.3s ease, height 0.3s ease;
+  }
+  body:has(a:hover) .cursor, body:has(button:hover) .cursor { width: 20px; height: 20px; }
+  body:has(a:hover) .cursor-ring, body:has(button:hover) .cursor-ring { width: 60px; height: 60px; opacity: 0; }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* NAVBAR */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 500;
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.4s ease, backdrop-filter 0.4s ease, padding 0.4s ease;
+  }
+  nav.scrolled {
+    background: rgba(10,10,8,0.85);
+    backdrop-filter: blur(20px);
+    padding: 16px 48px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 36px;
+  }
+  .nav-links a {
+    text-decoration: none;
+    color: var(--warm-grey);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    position: relative;
+    transition: color 0.3s;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -3px; left: 0;
+    width: 0; height: 1px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .nav-links a:hover { color: var(--off-white); }
+  .nav-links a:hover::after { width: 100%; }
+
+  .nav-logo a {
+    text-decoration: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.05em;
+    color: var(--off-white);
+  }
+  .nav-logo a span { color: var(--accent); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 48px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(120px, 20vw, 280px);
+    color: rgba(255,255,255,0.025);
+    white-space: nowrap;
+    letter-spacing: -0.02em;
+    pointer-events: none;
+    user-select: none;
+    animation: bgTextDrift 20s ease-in-out infinite alternate;
+  }
+  @keyframes bgTextDrift {
+    from { transform: translate(-50%, -55%) skewX(-2deg); }
+    to { transform: translate(-48%, -57%) skewX(1deg); }
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(200,242,58,0.1);
+    border: 1px solid rgba(200,242,58,0.25);
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.3s ease forwards;
+  }
+  .hero-badge .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(48px, 7.5vw, 110px);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    max-width: 900px;
+    opacity: 0;
+    animation: fadeUp 1s 0.5s ease forwards;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-sub-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.9s ease forwards;
+  }
+  .hero-sub-row p {
+    font-size: 15px;
+    color: var(--warm-grey);
+    max-width: 380px;
+    line-height: 1.7;
+  }
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--accent);
+    color: var(--black);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 16px 32px;
+    border-radius: 100px;
+    transition: background 0.3s, gap 0.3s, transform 0.3s;
+    white-space: nowrap;
+  }
+  .hero-cta:hover {
+    background: #d8ff40;
+    gap: 20px;
+    transform: scale(1.03);
+  }
+  .hero-cta .arrow { font-size: 18px; }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 40px;
+    right: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeIn 1s 1.5s ease forwards;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--warm-grey));
+    animation: scrollLine 2s ease-in-out infinite;
+  }
+  @keyframes scrollLine {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+  .scroll-label {
+    writing-mode: vertical-rl;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--warm-grey);
+    text-transform: uppercase;
+  }
+
+  /* MARQUEE */
+  .marquee-section {
+    border-top: 1px solid rgba(255,255,255,0.07);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    overflow: hidden;
+    padding: 20px 0;
+    background: var(--mid);
+  }
+  .marquee-track {
+    display: flex;
+    gap: 64px;
+    animation: marquee 18s linear infinite;
+    white-space: nowrap;
+  }
+  .marquee-track:hover { animation-play-state: paused; }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .marquee-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    color: var(--warm-grey);
+    flex-shrink: 0;
+  }
+  .marquee-item .sep {
+    color: var(--accent);
+    font-size: 14px;
+  }
+
+  /* WORK SECTION */
+  .work-section {
+    padding: 120px 48px;
+  }
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 64px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 28px;
+  }
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .section-count {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    color: rgba(255,255,255,0.06);
+    line-height: 1;
+  }
+
+  /* GRID */
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .grid-item {
+    position: relative;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  .img-wrapper {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4/5;
+  }
+
+  .img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.5s ease;
+    filter: grayscale(30%) brightness(0.85);
+  }
+
+  .grid-item:hover .img-wrapper img {
+    transform: scale(1.07);
+    filter: grayscale(0%) brightness(0.9);
+  }
+
+  .img-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(10,10,8,0.9) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .item-tag {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(10,10,8,0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--warm-grey);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 100px;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .grid-item:hover .item-tag { opacity: 1; transform: translateY(0); }
+
+  .item-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 28px 24px;
+    transform: translateY(6px);
+    transition: transform 0.4s ease;
+  }
+  .grid-item:hover .item-info { transform: translateY(0); }
+
+  .item-info h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .item-info p {
+    font-size: 13px;
+    color: var(--warm-grey);
+    line-height: 1.5;
+  }
+
+  .item-arrow {
+    position: absolute;
+    bottom: 28px;
+    right: 24px;
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    color: var(--black);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    opacity: 0;
+    transform: scale(0.5) rotate(-45deg);
+    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .grid-item:hover .item-arrow {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: var(--mid);
+    padding: 60px 48px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .stat-item {
+    padding: 0 32px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+  .stat-item:first-child { padding-left: 0; }
+  .stat-item:last-child { border-right: none; }
+
+  .stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: var(--off-white);
+  }
+  .stat-number span { color: var(--accent); }
+  .stat-label {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--warm-grey);
+    margin-top: 8px;
+  }
+
+  /* ABOUT */
+  .about-section {
+    padding: 120px 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+  .about-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+  .about-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 28px;
+  }
+  .about-body {
+    font-size: 15px;
+    color: var(--warm-grey);
+    line-height: 1.8;
+    margin-bottom: 20px;
+  }
+  .about-right {
+    position: relative;
+  }
+  .about-img-main {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    filter: grayscale(20%);
+    display: block;
+  }
+  .about-img-accent {
+    position: absolute;
+    width: 55%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    bottom: -32px;
+    left: -32px;
+    border: 4px solid var(--black);
+    filter: grayscale(40%);
+  }
+  .about-tag-box {
+    position: absolute;
+    top: 32px;
+    right: -24px;
+    background: var(--accent);
+    color: var(--black);
+    padding: 20px 24px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.5;
+  }
+
+  /* PROCESS */
+  .process-section {
+    padding: 120px 48px;
+    background: var(--mid);
+  }
+  .process-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    margin-top: 64px;
+  }
+  .process-item {
+    padding: 40px 32px;
+    background: var(--card-bg);
+    border-top: 2px solid transparent;
+    transition: border-color 0.3s, background 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .process-item:hover {
+    border-color: var(--accent);
+    background: #1a1a16;
+  }
+  .process-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(200,242,58,0.04) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .process-item:hover::after { opacity: 1; }
+
+  .process-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: rgba(255,255,255,0.08);
+    line-height: 1;
+    margin-bottom: 32px;
+    transition: color 0.3s;
+  }
+  .process-item:hover .process-num { color: var(--accent); opacity: 0.4; }
+
+  .process-icon {
+    font-size: 24px;
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  .process-item h4 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .process-item p {
+    font-size: 13px;
+    color: var(--warm-grey);
+    line-height: 1.7;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--black);
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .footer-main {
+    padding: 80px 48px 60px;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 64px;
+  }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .footer-logo span { color: var(--accent); }
+  .footer-tagline {
+    font-size: 14px;
+    color: var(--warm-grey);
+    line-height: 1.7;
+    max-width: 280px;
+    margin-bottom: 32px;
+  }
+
+  .footer-socials {
+    display: flex;
+    gap: 12px;
+  }
+  .social-link {
+    width: 38px; height: 38px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 13px;
+    color: var(--warm-grey);
+    transition: border-color 0.3s, color 0.3s, background 0.3s;
+  }
+  .social-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(200,242,58,0.08);
+  }
+
+  .footer-col h4 {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col ul li { margin-bottom: 12px; }
+  .footer-col ul li a {
+    text-decoration: none;
+    font-size: 14px;
+    color: var(--warm-grey);
+    transition: color 0.3s;
+  }
+  .footer-col ul li a:hover { color: var(--off-white); }
+
+  .newsletter-row {
+    display: flex;
+    gap: 0;
+    margin-top: 8px;
+  }
+  .newsletter-row input {
+    flex: 1;
+    background: var(--mid);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-right: none;
+    color: var(--off-white);
+    padding: 12px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    border-radius: 4px 0 0 4px;
+    transition: border-color 0.3s;
+  }
+  .newsletter-row input::placeholder { color: var(--warm-grey); }
+  .newsletter-row input:focus { border-color: rgba(200,242,58,0.4); }
+  .newsletter-row button {
+    background: var(--accent);
+    color: var(--black);
+    border: none;
+    padding: 12px 20px;
+    cursor: none;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 0 4px 4px 0;
+    transition: background 0.3s;
+  }
+  .newsletter-row button:hover { background: #d8ff40; }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 24px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-bottom p {
+    font-size: 12px;
+    color: var(--warm-grey);
+    letter-spacing: 0.05em;
+  }
+  .footer-bottom-links {
+    display: flex;
+    gap: 28px;
+    list-style: none;
+  }
+  .footer-bottom-links a {
+    font-size: 12px;
+    color: var(--warm-grey);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: color 0.3s;
+  }
+  .footer-bottom-links a:hover { color: var(--off-white); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+
+  /* HOVER LINK UNDERLINE */
+  .link-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--off-white);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 4px;
+    transition: border-color 0.3s, gap 0.3s, color 0.3s;
+  }
+  .link-arrow:hover { border-color: var(--accent); color: var(--accent); gap: 16px; }
+</style>
+</head>
+
+<body>
+
+<!-- CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <ul class="nav-links">
+    <li><a href="#work">Work</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+  <div class="nav-logo"><a href="#">ZAP<span>.</span></a></div>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg-text">ZAP STUDIO</div>
+
+  <div class="hero-badge">
+    <span class="dot"></span>
+    Available for new projects
+  </div>
+  <h1>We build digital<br>products that <em>feel</em><br>human.</h1>
+  <div class="hero-sub-row">
+    <p>Based in West Bengal, working globally with brands that value craft and intentionality.</p>
+    <a href="#work" class="hero-cta">View Our Work <span class="arrow">→</span></a>
+  </div>
+
+  <div class="hero-scroll">
+    <span class="scroll-label">Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-track">
+    <!-- repeated twice for seamless loop -->
+    <div class="marquee-item">Brand Identity <span class="sep">✦</span></div>
+    <div class="marquee-item">Web Design <span class="sep">✦</span></div>
+    <div class="marquee-item">Art Direction <span class="sep">✦</span></div>
+    <div class="marquee-item">Motion Design <span class="sep">✦</span></div>
+    <div class="marquee-item">UX Strategy <span class="sep">✦</span></div>
+    <div class="marquee-item">Digital Products <span class="sep">✦</span></div>
+    <div class="marquee-item">Brand Identity <span class="sep">✦</span></div>
+    <div class="marquee-item">Web Design <span class="sep">✦</span></div>
+    <div class="marquee-item">Art Direction <span class="sep">✦</span></div>
+    <div class="marquee-item">Motion Design <span class="sep">✦</span></div>
+    <div class="marquee-item">UX Strategy <span class="sep">✦</span></div>
+    <div class="marquee-item">Digital Products <span class="sep">✦</span></div>
+  </div>
+</div>
+
+<!-- WORK SECTION -->
+<section class="work-section" id="work">
+  <div class="section-header reveal">
+    <div>
+      <div class="section-label">Selected Work</div>
+      <h2 class="section-title">Recent Projects</h2>
+    </div>
+    <div class="section-count">03</div>
+  </div>
+
+  <div class="grid-container">
+    <div class="grid-item reveal reveal-delay-1">
+      <div class="img-wrapper">
+        <img src="https://picsum.photos/600/750?random=1" alt="Brand Identity project">
+        <div class="img-overlay"></div>
+        <span class="item-tag">2025 — Branding</span>
+        <div class="item-info">
+          <h3>Brand Identity</h3>
+          <p>Visual systems that scale with your growth.</p>
+        </div>
+        <div class="item-arrow">→</div>
+      </div>
+    </div>
+    <div class="grid-item reveal reveal-delay-2">
+      <div class="img-wrapper">
+        <img src="https://picsum.photos/600/750?random=2" alt="Web Design project">
+        <div class="img-overlay"></div>
+        <span class="item-tag">2026 — Web</span>
+        <div class="item-info">
+          <h3>Web Design</h3>
+          <p>Responsive, fast, and high-conversion layouts.</p>
+        </div>
+        <div class="item-arrow">→</div>
+      </div>
+    </div>
+    <div class="grid-item reveal reveal-delay-3">
+      <div class="img-wrapper">
+        <img src="https://picsum.photos/600/750?random=3" alt="Art Direction project">
+        <div class="img-overlay"></div>
+        <span class="item-tag">2026 — Direction</span>
+        <div class="item-info">
+          <h3>Art Direction</h3>
+          <p>Curating the visual narrative of your company.</p>
+        </div>
+        <div class="item-arrow">→</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item reveal">
+    <div class="stat-number"><span class="counter" data-target="84">0</span><span>+</span></div>
+    <div class="stat-label">Projects Delivered</div>
+  </div>
+  <div class="stat-item reveal reveal-delay-1">
+    <div class="stat-number"><span class="counter" data-target="12">0</span></div>
+    <div class="stat-label">Years of Craft</div>
+  </div>
+  <div class="stat-item reveal reveal-delay-2">
+    <div class="stat-number"><span class="counter" data-target="96">0</span><span>%</span></div>
+    <div class="stat-label">Client Satisfaction</div>
+  </div>
+  <div class="stat-item reveal reveal-delay-3">
+    <div class="stat-number"><span class="counter" data-target="31">0</span></div>
+    <div class="stat-label">Countries Reached</div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section class="about-section" id="about">
+  <div>
+    <div class="about-label reveal">Our Story</div>
+    <h2 class="about-heading reveal">Intentional design<br>for ambitious<br><em style="font-family:'DM Serif Display',serif; font-style:italic; color:var(--accent)">brands.</em></h2>
+    <p class="about-body reveal">We are a small, focused team of designers and technologists in West Bengal. Every project we take on receives our full attention — no handoffs, no templates, no shortcuts.</p>
+    <p class="about-body reveal">We build things that last: identities that travel, products that convert, stories that connect.</p>
+    <a href="#contact" class="link-arrow reveal">Start a Conversation →</a>
+  </div>
+  <div class="about-right reveal">
+    <img src="https://picsum.photos/600/800?random=10" alt="Studio team at work" class="about-img-main">
+    <img src="https://picsum.photos/400/400?random=11" alt="Studio workspace detail" class="about-img-accent">
+    <div class="about-tag-box">Est.<br>2012<br>WB</div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section class="process-section" id="services">
+  <div class="section-header reveal">
+    <div>
+      <div class="section-label">How We Work</div>
+      <h2 class="section-title">Our Process</h2>
+    </div>
+    <div class="section-count">04</div>
+  </div>
+
+  <div class="process-grid">
+    <div class="process-item reveal reveal-delay-1">
+      <div class="process-num">01</div>
+      <span class="process-icon">◎</span>
+      <h4>Discover</h4>
+      <p>Deep-dive into your brand, audience, and competitive landscape to find your unfair advantage.</p>
+    </div>
+    <div class="process-item reveal reveal-delay-2">
+      <div class="process-num">02</div>
+      <span class="process-icon">◈</span>
+      <h4>Design</h4>
+      <p>Translating strategy into form — crafting visual systems, interfaces, and narratives that resonate.</p>
+    </div>
+    <div class="process-item reveal reveal-delay-3">
+      <div class="process-num">03</div>
+      <span class="process-icon">◉</span>
+      <h4>Build</h4>
+      <p>Precision development. Clean code, optimal performance, and pixel-perfect production output.</p>
+    </div>
+    <div class="process-item reveal reveal-delay-4">
+      <div class="process-num">04</div>
+      <span class="process-icon">◐</span>
+      <h4>Launch & Grow</h4>
+      <p>We don't disappear at launch. We help you iterate, measure, and evolve with your audience.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="footer-main">
+    <div>
+      <div class="footer-logo">ZAP<span>.</span></div>
+      <p class="footer-tagline">Creating intentional digital experiences from the ground up.</p>
+      <div class="footer-socials">
+        <a href="#" class="social-link" aria-label="Twitter">𝕏</a>
+        <a href="#" class="social-link" aria-label="Instagram">◻</a>
+        <a href="#" class="social-link" aria-label="LinkedIn">in</a>
+        <a href="#" class="social-link" aria-label="Dribbble">◓</a>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h4>Get In Touch</h4>
+      <ul>
+        <li><a href="mailto:hello@zap.com">hello@ZAP.com</a></li>
+        <li><a href="tel:+15550192834">+1 (555) 019-2834</a></li>
+        <li><a href="#">West Bengal, India</a></li>
+      </ul>
+      <br>
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="#work">Work</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#services">Services</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Stay Updated</h4>
+      <p style="font-size:13px; color:var(--warm-grey); margin-bottom:16px; line-height:1.6;">Monthly notes on design, craft, and the work we're doing.</p>
+      <div class="newsletter-row">
+        <input type="email" placeholder="your@email.com">
+        <button type="button">→</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>© 2026 ZAP Studio. All rights reserved.</p>
+    <ul class="footer-bottom-links">
+      <li><a href="#">Privacy</a></li>
+      <li><a href="#">Terms</a></li>
+      <li><a href="#">Cookies</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = -100, my = -100, rx = -100, ry = -100;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+  (function animate() {
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animate);
+  })();
+
+  // Navbar scroll
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  reveals.forEach(el => observer.observe(el));
+
+  // Counter animation
+  function animateCount(el) {
+    const target = parseInt(el.dataset.target);
+    const duration = 1800;
+    const start = performance.now();
+    (function step(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 4);
+      el.textContent = Math.round(ease * target);
+      if (t < 1) requestAnimationFrame(step);
+    })(start);
+  }
+  const counterObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        animateCount(e.target);
+        counterObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
+
+  // Newsletter button feedback
+  document.querySelector('.newsletter-row button').addEventListener('click', function() {
+    const input = this.previousElementSibling;
+    if (input.value && input.value.includes('@')) {
+      this.textContent = '✓';
+      this.style.background = '#6ef07a';
+      input.value = '';
+      setTimeout(() => { this.textContent = '→'; this.style.background = ''; }, 2500);
+    }
+  });
+</script>
+</body>
+</html>
